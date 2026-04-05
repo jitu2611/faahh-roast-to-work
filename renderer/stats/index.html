@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Faahh — Stats</title>
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --border: #2a2a2a;
+      --accent: #ff4500;
+      --text: #f0f0f0;
+      --muted: #888;
+      --success: #22c55e;
+      --warn: #f59e0b;
+      --radius: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      padding: 24px;
+      user-select: none;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    header .title { display: flex; align-items: center; gap: 12px; }
+    header .logo { font-size: 28px; }
+    header h1 { font-size: 20px; font-weight: 700; }
+    header p { font-size: 12px; color: var(--muted); }
+
+    .reset-btn {
+      padding: 6px 12px;
+      background: transparent;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .reset-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* KPI row */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+    }
+    .kpi-value {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .kpi-value.fire { color: var(--accent); }
+    .kpi-value.streak { color: var(--warn); }
+    .kpi-value.green { color: var(--success); }
+
+    /* Weekly chart */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    /* Bar chart */
+    .bar-chart { display: flex; align-items: flex-end; gap: 10px; height: 100px; }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .bar-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+    .bar {
+      width: 100%;
+      border-radius: 4px 4px 0 0;
+      min-height: 4px;
+      transition: height 0.4s ease;
+    }
+    .bar.roasts { background: var(--accent); opacity: 0.85; }
+    .bar-label { font-size: 10px; color: var(--muted); }
+
+    /* Motivational message */
+    .motivate {
+      background: linear-gradient(135deg, #1a0a00 0%, #2a0f00 100%);
+      border: 1px solid #3a1500;
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+    }
+    .motivate .emoji { font-size: 32px; margin-bottom: 8px; }
+    .motivate p { font-size: 13px; color: #ffb085; line-height: 1.5; }
+
+    /* Legend */
+    .legend { display: flex; gap: 16px; margin-top: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title">
+      <div class="logo">📊</div>
+      <div>
+        <h1>Your Roast Stats</h1>
+        <p>How badly have you been slacking?</p>
+      </div>
+    </div>
+    <button class="reset-btn" id="resetBtn">Reset Stats</button>
+  </header>
+
+  <!-- KPI Cards -->
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-value streak" id="streakVal">0</div>
+      <div class="kpi-label">🔥 Day Streak</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-value fire" id="totalRoastsVal">0</div>
+      <div class="kpi-label">💀 Total Roasts</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-value green" id="todayRoastsVal">0</div>
+      <div class="kpi-label">Today's Roasts</div>
+    </div>
+  </div>
+
+  <!-- Weekly Bar Chart -->
+  <div class="card">
+    <div class="card-title">Last 7 Days — Roasts Received</div>
+    <div class="bar-chart" id="barChart"></div>
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background: var(--accent)"></div>
+        Roasts fired
+      </div>
+    </div>
+  </div>
+
+  <!-- Motivational blurb -->
+  <div class="motivate">
+    <div class="emoji" id="motivateEmoji">💪</div>
+    <p id="motivateText">Loading your shame report...</p>
+  </div>
+
+  <script>
+    const motivations = [
+      { emoji: '💀', text: "You're getting roasted more than a Thanksgiving turkey. Maybe try... working?" },
+      { emoji: '🔥', text: "Every roast is a lesson. You, my friend, are getting a PhD in Not Working." },
+      { emoji: '🏆', text: "Zero roasts today! You absolute legend. Keep this streak going!" },
+      { emoji: '😤', text: "The app is tired of roasting you. And honestly, so are we." },
+      { emoji: '🚀', text: "Streak looking strong! Your future self is sending gratitude vibes." },
+      { emoji: '🫠', text: "Productivity: somewhere between 'napping' and 'maybe next week'." },
+    ];
+
+    async function loadStats() {
+      const stats = await window.faahh.getStats();
+      const daily = stats.dailyStats || {};
+      const today = new Date().toISOString().split('T')[0];
+
+      document.getElementById('streakVal').textContent = stats.streak || 0;
+      document.getElementById('totalRoastsVal').textContent = stats.totalRoasts || 0;
+      document.getElementById('todayRoastsVal').textContent = daily[today]?.roasts || 0;
+
+      renderBarChart(daily);
+      renderMotivation(stats);
+    }
+
+    function renderBarChart(daily) {
+      const chart = document.getElementById('barChart');
+      chart.innerHTML = '';
+
+      const days = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        const label = i === 0 ? 'Today' : i === 1 ? 'Yest.' : d.toLocaleDateString('en', { weekday: 'short' });
+        days.push({ date: dateStr, label, roasts: daily[dateStr]?.roasts || 0 });
+      }
+
+      const max = Math.max(...days.map(d => d.roasts), 1);
+
+      days.forEach(day => {
+        const col = document.createElement('div');
+        col.className = 'bar-col';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'bar-wrap';
+
+        const bar = document.createElement('div');
+        bar.className = 'bar roasts';
+        bar.style.height = `${Math.max((day.roasts / max) * 80, day.roasts > 0 ? 4 : 0)}px`;
+        bar.title = `${day.roasts} roast${day.roasts !== 1 ? 's' : ''}`;
+
+        const lbl = document.createElement('div');
+        lbl.className = 'bar-label';
+        lbl.textContent = day.label;
+
+        wrap.appendChild(bar);
+        col.appendChild(wrap);
+        col.appendChild(lbl);
+        chart.appendChild(col);
+      });
+    }
+
+    function renderMotivation(stats) {
+      const today = new Date().toISOString().split('T')[0];
+      const todayRoasts = (stats.dailyStats || {})[today]?.roasts || 0;
+      const streak = stats.streak || 0;
+
+      let m;
+      if (todayRoasts === 0 && streak > 2) m = motivations[2];
+      else if (todayRoasts > 5) m = motivations[3];
+      else if (streak >= 7) m = motivations[4];
+      else if (todayRoasts === 0) m = motivations[5];
+      else m = motivations[Math.floor(Math.random() * 2)];
+
+      document.getElementById('motivateEmoji').textContent = m.emoji;
+      document.getElementById('motivateText').textContent = m.text;
+    }
+
+    document.getElementById('resetBtn').addEventListener('click', async () => {
+      if (confirm('Reset all stats? This cannot be undone.')) {
+        await window.faahh.resetStats();
+        loadStats();
+      }
+    });
+
+    loadStats();
+  </script>
+</body>
+</html>
