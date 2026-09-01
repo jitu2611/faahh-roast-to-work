@@ -18,6 +18,10 @@ No dashboards. No blockers. Just instant chaos and shame.
 
 ---
 
+## How it works
+
+![Focus loop](docs/focus-loop.svg)
+
 ## Features
 
 | Feature | Details |
